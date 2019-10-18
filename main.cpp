@@ -120,7 +120,13 @@ void process_file(const std::string& input_filename,
     boost_pt::ptree pt;
 
     // Load the XML into ptree.
-    std::ifstream ifs(input_filename, std::ios::binary);
+    std::ifstream input_file_stream;
+    if (!input_filename.empty()) {
+        input_file_stream.open(input_filename, std::ios::binary);
+    }
+    std::istream& ifs = !input_filename.empty()
+        ? input_file_stream
+        : std::cin;
     if (ifs.peek() == 'P') {
         auto content = extract_manifest(input_filename);
         imemstream ims(content.data(), content.size());
@@ -147,15 +153,12 @@ int main(int argc, char** argv)
             "version", "Display version number")(
             "input-file,i", po::value<std::string>(), "Input file")(
             "output-file,o", po::value<std::string>(), "Output file");
-    po::positional_options_description p;
-    p.add("input-file", -1);
 
     try {
         // Process the command line arguments.
         po::variables_map vmap;
         po::store(po::command_line_parser(argc, argv)
                           .options(desc)
-                          .positional(p)
                           .run(),
                   vmap);
         po::notify(vmap);
@@ -171,22 +174,22 @@ int main(int argc, char** argv)
             return 0;
         }
 
-        if (vmap.count("help") || !vmap.count("input-file")) {
+        if (vmap.count("help")) {
             // Print help and quit.
-            std::cout << "Usage: axmldec [options] <input_file>\n\n";
+            std::cout << "Usage: axmldec [options]\n\n";
             std::cout << desc << "\n";
             return 0;
         }
 
-        if (vmap.count("input-file")) {
-            auto input_filename = vmap["input-file"].as<std::string>();
-            auto output_filename = vmap.count("output-file")
-                    ? vmap["output-file"].as<std::string>()
-                    : "";
+          auto input_filename = vmap.count("input-file")
+          ? vmap["input-file"].as<std::string>()
+          : "";
+          auto output_filename = vmap.count("output-file")
+          ? vmap["output-file"].as<std::string>()
+          : "";
 
-            // Process the file.
-            process_file(input_filename, output_filename);
-        }
+          // Process the file.
+          process_file(input_filename, output_filename);
     }
     catch (std::ios::failure& e) {
         std::cerr << "error: failed to open the input file\n";
