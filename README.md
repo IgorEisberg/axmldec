@@ -28,13 +28,13 @@ program.
 
 ### 2.1 macOS
 
-You can install axmldec using [Homebrew]:
+You can install the original project by [Yutaka Tsutano] using [Homebrew]:
 ```sh
 brew tap ytsutano/toolbox
 brew install axmldec
 ```
 
-Or, download the binary from [Releases].
+Or, download the binary from the [original Releases] page.
 
 ### 2.2 Windows
 
@@ -63,8 +63,19 @@ If an APK file is specified, axmldec automatically extracts and decodes
 ```sh
 axmldec -o output.xml com.example.app.apk
 ```
+If the `-x` option is passed, axmldec can decode a different xml file (requires forward slashes)
+```sh
+axmldec -o output.xml com.example.app.apk -x res/layout/preference.xml
+```
 
 ### 3.3 Using the Standard Output
+
+axmldec can read bytes from the standard input as an encoded xml file:
+```sh
+type input.xml | axmldec -o output.xml
+```
+
+### 3.4 Using the Standard Output
 
 axmldec writes to the standard output if the `-o` option is not specified. This
 is useful when additional processing is required. For example, you can extract
@@ -79,7 +90,7 @@ axmldec com.example.app.apk | xmllint --xpath 'string(/manifest/@package)' -
 
 2. Clone axmldec and its submodule from GitHub:
     ```sh
-    git clone --recursive https://github.com/ytsutano/axmldec.git
+    git clone --recursive https://github.com/alesimula/axmldec.git
     ```
 
 3. Compile axmldec:
@@ -96,7 +107,8 @@ axmldec com.example.app.apk | xmllint --xpath 'string(/manifest/@package)' -
 - See [LICENSE.md](LICENSE.md) for license rights and limitations (ISC).
 
 [Yutaka Tsutano]: http://yutaka.tsutano.com
-[Releases]: https://github.com/ytsutano/axmldec/releases
+[original Releases]: https://github.com/ytsutano/axmldec/releases
+[Releases]: https://github.com/alesimula/axmldec/releases
 [Jitana]: https://github.com/ytsutano/jitana
 [ptree]: http://www.boost.org/doc/libs/1_64_0/doc/html/property_tree.html
 [Homebrew]: https://brew.sh
