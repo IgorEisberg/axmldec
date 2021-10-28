@@ -1,18 +1,18 @@
 /*
- * Copyright (c) 2016, 2017, Yutaka Tsutano
- *
- * Permission to use, copy, modify, and/or distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
- *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
- * REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
- * AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
- * INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
- * LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
- * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
- * PERFORMANCE OF THIS SOFTWARE.
- */
+* Copyright (c) 2016, 2017, Yutaka Tsutano
+*
+* Permission to use, copy, modify, and/or distribute this software for any
+* purpose with or without fee is hereby granted, provided that the above
+* copyright notice and this permission notice appear in all copies.
+*
+* THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
+* REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
+* AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
+* INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
+* LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
+* OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+* PERFORMANCE OF THIS SOFTWARE.
+*/
 
 #include "axmldec_config.hpp"
 #include "jitana/util/axml_parser.hpp"
@@ -31,172 +31,177 @@
 namespace boost_pt = boost::property_tree;
 
 struct membuf : std::streambuf {
-    membuf(const char* base, size_t size)
-    {
-        char* p(const_cast<char*>(base));
-        this->setg(p, p, p + size);
-    }
+   membuf(const char* base, size_t size)
+   {
+       char* p(const_cast<char*>(base));
+       this->setg(p, p, p + size);
+   }
 };
 
 struct imemstream : virtual membuf, std::istream {
-    imemstream(char const* base, size_t size)
-            : membuf(base, size),
-              std::istream(static_cast<std::streambuf*>(this))
-    {
-    }
+   imemstream(char const* base, size_t size)
+           : membuf(base, size),
+             std::istream(static_cast<std::streambuf*>(this))
+   {
+   }
 };
 
-std::vector<char> extract_manifest(const std::string& input_filename)
+std::vector<char> extract_manifest(const std::string& input_filename, const std::string& xml_filename)
 {
-    auto* apk = unzOpen(input_filename.c_str());
-    if (apk == nullptr) {
-        throw std::runtime_error("not an APK file");
-    }
+   auto* apk = unzOpen(input_filename.c_str());
+   if (apk == nullptr) {
+       throw std::runtime_error("not an APK file");
+   }
 
-    if (unzLocateFile(apk, "AndroidManifest.xml", 0) != UNZ_OK) {
-        unzClose(apk);
-        throw std::runtime_error("AndroidManifest.xml is not found in APK");
-    }
+   if (unzLocateFile(apk, xml_filename.c_str(), 0) != UNZ_OK) {
+       unzClose(apk);
+       throw std::runtime_error(xml_filename+" is not found in APK");
+   }
 
-    if (unzOpenCurrentFile(apk) != UNZ_OK) {
-        unzClose(apk);
-        throw std::runtime_error("failed to open AndroidManifest.xml in APK");
-    }
+   if (unzOpenCurrentFile(apk) != UNZ_OK) {
+       unzClose(apk);
+       throw std::runtime_error("failed to open "+xml_filename+" in APK");
+   }
 
-    unz_file_info64 info;
-    if (unzGetCurrentFileInfo64(apk, &info, nullptr, 0, nullptr, 0, nullptr, 0)
-        != UNZ_OK) {
-        unzCloseCurrentFile(apk);
-        unzClose(apk);
-        throw std::runtime_error("failed to open AndroidManifest.xml in APK");
-    }
+   unz_file_info64 info;
+   if (unzGetCurrentFileInfo64(apk, &info, nullptr, 0, nullptr, 0, nullptr, 0)
+       != UNZ_OK) {
+       unzCloseCurrentFile(apk);
+       unzClose(apk);
+       throw std::runtime_error("failed to open "+xml_filename+" in APK");
+   }
 
-    std::vector<char> content(info.uncompressed_size);
-    constexpr size_t read_size = 1 << 15;
-    for (size_t offset = 0;; offset += read_size) {
-        int len = unzReadCurrentFile(apk, content.data() + offset, read_size);
-        if (len == 0) {
-            break;
-        }
-        else if (len < 0) {
-            unzCloseCurrentFile(apk);
-            unzClose(apk);
-            throw std::runtime_error(
-                    "failed to read AndroidManifest.xml in APK");
-        }
-    }
+   std::vector<char> content(info.uncompressed_size);
+   constexpr size_t read_size = 1 << 15;
+   for (size_t offset = 0;; offset += read_size) {
+       int len = unzReadCurrentFile(apk, content.data() + offset, read_size);
+       if (len == 0) {
+           break;
+       }
+       else if (len < 0) {
+           unzCloseCurrentFile(apk);
+           unzClose(apk);
+           throw std::runtime_error(
+                   "failed to read file "+xml_filename+" in APK");
+       }
+   }
 
-    unzCloseCurrentFile(apk);
-    unzClose(apk);
+   unzCloseCurrentFile(apk);
+   unzClose(apk);
 
-    return content;
+   return content;
 }
 
 void write_xml(const std::string& output_filename, const boost_pt::ptree& pt)
 {
-    // Construct the output stream.
-    std::ostream* os = &std::cout;
-    std::ofstream ofs;
-    if (!output_filename.empty()) {
-        ofs.open(output_filename);
-        os = &ofs;
-    }
+   // Construct the output stream.
+   std::ostream* os = &std::cout;
+   std::ofstream ofs;
+   if (!output_filename.empty()) {
+       ofs.open(output_filename);
+       os = &ofs;
+   }
 
-    // Write the ptree to the output.
-    {
+   // Write the ptree to the output.
+   {
 #if BOOST_MAJOR_VERSION == 1 && BOOST_MINOR_VERSION < 56
-        boost_pt::xml_writer_settings<char> settings(' ', 2);
+       boost_pt::xml_writer_settings<char> settings(' ', 2);
 #else
-        boost_pt::xml_writer_settings<std::string> settings(' ', 2);
+       boost_pt::xml_writer_settings<std::string> settings(' ', 2);
 #endif
-        boost_pt::write_xml(*os, pt, settings);
-    }
+       boost_pt::write_xml(*os, pt, settings);
+   }
 }
 
 void process_file(const std::string& input_filename,
-                  const std::string& output_filename)
+                 const std::string& output_filename,
+                 const std::string& xml_filename)
 {
-    // Property tree for storing the XML content.
-    boost_pt::ptree pt;
+   // Property tree for storing the XML content.
+   boost_pt::ptree pt;
 
-    // Load the XML into ptree.
-    std::ifstream input_file_stream;
-    if (!input_filename.empty()) {
-        input_file_stream.open(input_filename, std::ios::binary);
-    }
-    std::istream& ifs = !input_filename.empty()
-        ? input_file_stream
-        : std::cin;
-    if (ifs.peek() == 'P') {
-        auto content = extract_manifest(input_filename);
-        imemstream ims(content.data(), content.size());
-        jitana::read_axml(ims, pt);
-    }
-    else if (ifs.peek() == 0x03) {
-        jitana::read_axml(ifs, pt);
-    }
-    else {
-        boost_pt::read_xml(ifs, pt, boost_pt::xml_parser::trim_whitespace);
-    }
+   // Load the XML into ptree.
+   std::ifstream input_file_stream;
+   if (!input_filename.empty()) {
+       input_file_stream.open(input_filename, std::ios::binary);
+   }
+   std::istream& ifs = !input_filename.empty()
+           ? input_file_stream
+           : std::cin;
+   if (ifs.peek() == 'P') {
+       auto content = extract_manifest(input_filename, xml_filename);
+       imemstream ims(content.data(), content.size());
+       jitana::read_axml(ims, pt);
+   }
+   else if (ifs.peek() == 0x03) {
+       jitana::read_axml(ifs, pt);
+   }
+   else {
+       boost_pt::read_xml(ifs, pt, boost_pt::xml_parser::trim_whitespace);
+   }
 
-    // Write the tree as an XML file.
-    write_xml(output_filename, pt);
+   // Write the tree as an XML file.
+   write_xml(output_filename, pt);
 }
 
 int main(int argc, char** argv)
 {
-    namespace po = boost::program_options;
+   namespace po = boost::program_options;
 
-    // Declare command line argument options.
-    po::options_description desc("Allowed options");
-    desc.add_options()("help", "Display available options")(
-            "version", "Display version number")(
-            "input-file,i", po::value<std::string>(), "Input file")(
-            "output-file,o", po::value<std::string>(), "Output file");
+   // Declare command line argument options.
+   po::options_description desc("Allowed options");
+   desc.add_options()("help", "Display available options")(
+           "version", "Display version number")(
+           "input-file,i", po::value<std::string>(), "Input file")(
+           "output-file,o", po::value<std::string>(), "Output file")(
+           "xml,x", po::value<std::string>(), "Xml file inside the apk (default: AndroidManifest.xml)");
 
-    try {
-        // Process the command line arguments.
-        po::variables_map vmap;
-        po::store(po::command_line_parser(argc, argv)
-                          .options(desc)
-                          .run(),
-                  vmap);
-        po::notify(vmap);
+   try {
+       // Process the command line arguments.
+       po::variables_map vmap;
+       po::store(po::command_line_parser(argc, argv)
+                         .options(desc)
+                         .run(),
+                 vmap);
+       po::notify(vmap);
 
-        if (vmap.count("version")) {
-            // Print version and quit.
-            std::cout << "axmldec ";
-            std::cout << AXMLDEC_VERSION_MAJOR;
-            std::cout << "." << AXMLDEC_VERSION_MINOR;
-            std::cout << "." << AXMLDEC_VERSION_PATCH;
-            std::cout << " (" << AXMLDEC_BUILD_TIMESTAMP << ")\n";
-            std::cout << "Copyright (C) 2017 Yutaka Tsutano.\n";
-            return 0;
-        }
+       if (vmap.count("version")) {
+           // Print version and quit.
+           std::cout << "axmldec ";
+           std::cout << AXMLDEC_VERSION_MAJOR;
+           std::cout << "." << AXMLDEC_VERSION_MINOR;
+           std::cout << "." << AXMLDEC_VERSION_PATCH;
+           std::cout << " (" << AXMLDEC_BUILD_TIMESTAMP << ")\n";
+           std::cout << "Copyright (C) 2017 Yutaka Tsutano.\n";
+           return 0;
+       }
 
-        if (vmap.count("help")) {
-            // Print help and quit.
-            std::cout << "Usage: axmldec [options]\n\n";
-            std::cout << desc << "\n";
-            return 0;
-        }
+       if (vmap.count("help")) {
+           // Print help and quit.
+           std::cout << "Usage: axmldec [options]\n\n";
+           std::cout << desc << "\n";
+           return 0;
+       }
 
-          auto input_filename = vmap.count("input-file")
-          ? vmap["input-file"].as<std::string>()
-          : "";
-          auto output_filename = vmap.count("output-file")
-          ? vmap["output-file"].as<std::string>()
-          : "";
+       auto input_filename = vmap.count("input-file")
+               ? vmap["input-file"].as<std::string>()
+               : "";
+       auto output_filename = vmap.count("output-file")
+               ? vmap["output-file"].as<std::string>()
+               : "";
+       auto xml_filename = vmap.count("xml")
+               ? vmap["xml"].as<std::string>()
+               : "AndroidManifest.xml";
 
-          // Process the file.
-          process_file(input_filename, output_filename);
-    }
-    catch (std::ios::failure& e) {
-        std::cerr << "error: failed to open the input file\n";
-        return 1;
-    }
-    catch (std::exception& e) {
-        std::cerr << "error: " << e.what() << "\n";
-        return 1;
-    }
+       // Process the file.
+       process_file(input_filename, output_filename, xml_filename);
+   }
+   catch (std::ios::failure& e) {
+       std::cerr << "error: failed to open the input file\n";
+       return 1;
+   }
+   catch (std::exception& e) {
+       std::cerr << "error: " << e.what() << "\n";
+       return 1;
+   }
 }
