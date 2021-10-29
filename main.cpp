@@ -26,6 +26,12 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/program_options.hpp>
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+#define PLATFORM_WINDOWS
+#include <io.h>
+#include <fcntl.h>
+#endif
+
 #include <unzip.h>
 
 namespace boost_pt = boost::property_tree;
@@ -124,6 +130,12 @@ void process_file(const std::string& input_filename,
    std::ifstream input_file_stream;
    if (!input_filename.empty()) {
        input_file_stream.open(input_filename, std::ios::binary);
+   }
+   else {
+       //TODO Linux?
+       #ifdef PLATFORM_WINDOWS
+       _setmode(_fileno(stdin), _O_BINARY);
+       #endif
    }
    std::istream& ifs = !input_filename.empty()
            ? input_file_stream
