@@ -6,7 +6,7 @@ axmldec: Android Binary XML Decoder
 [`AndroidManifest.xml`][Android App Manifest] in an [APK file][APK] is binary
 encoded. This tool accepts either a binary or a text XML file and prints the
 decoded XML to the standard output or a file. It also allows you to extract the
-decoded `AndroidManifest.xml` directly from an APK file.
+decoded `AndroidManifest.xml` and any other encoded xml file directly from an APK file.
 
 ![](doc/overview.png)
 
