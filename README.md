@@ -68,7 +68,7 @@ If the `-x` option is passed, axmldec can decode a different xml file (requires 
 axmldec -o output.xml com.example.app.apk -x res/layout/preference.xml
 ```
 
-### 3.3 Using the Standard Output
+### 3.3 Using the Standard Input
 
 axmldec can read bytes from the standard input as an encoded xml file:
 ```sh
