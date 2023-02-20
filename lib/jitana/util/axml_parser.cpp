@@ -1837,7 +1837,11 @@ namespace jitana {
             // For now, we only care about the attribute names.
             id -= 0x1010000;
             if (id >= sizeof(attr_names) / sizeof(attr_names[0])) {
-                throw axml_parser_error("invalid resource id");
+				char id_string[32];
+                sprintf(id_string, "%d", id);
+                std::stringstream ss;
+	            ss << "unknown_" << id_string;
+                return ss.str().c_str();;
             }
             return attr_names[id];
         }
