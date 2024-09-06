@@ -112,9 +112,9 @@ void write_xml(const std::string& path, const boost_pt::ptree& pt)
     // Write the ptree to the output.
     {
 #if BOOST_MAJOR_VERSION == 1 && BOOST_MINOR_VERSION < 56
-        boost_pt::xml_writer_settings<char> settings(' ', 2);
+        boost_pt::xml_writer_settings<char> settings(' ', 4);
 #else
-        boost_pt::xml_writer_settings<std::string> settings(' ', 2);
+        boost_pt::xml_writer_settings<std::string> settings(' ', 4);
 #endif
         boost_pt::write_xml(*os, pt, settings);
     }

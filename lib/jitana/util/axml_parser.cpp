@@ -205,7 +205,7 @@ namespace jitana {
                 // case type_first_int:
                 //     break;
                 case type_int_dec:
-                    os << std::dec << x.data;
+                    os << static_cast<int32_t>(x.data);
                     break;
                 case type_int_hex:
                     os << "0x" << std::hex << x.data;
@@ -229,7 +229,7 @@ namespace jitana {
                 // case type_last_int:
                 //     break;
                 default:
-                    os << "type" << (int)x.data_type << "/" << x.data;
+                    os << "@ref/0x" << std::setw(8) << std::setfill('0') << std::hex << x.data;
                 }
 
                 return os;
